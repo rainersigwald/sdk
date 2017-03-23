@@ -31,7 +31,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 
   <UsingTask TaskName="GetNearestTargetFramework" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" />
   <UsingTask TaskName="NETSdkError" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" />
-  
+
   <!--
     ============================================================
                                         ShouldQueryForProperties
@@ -47,9 +47,13 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_IsRidAgnostic>false</_IsRidAgnostic>
       <_IsRidAgnostic Condition=" '$(RuntimeIdentifier)' == '' and '$(RuntimeIdentifiers)' == '' ">true</_IsRidAgnostic>
 
+      <_DesiredRemovedProperties Condition="'$(_IsRidAgnostic)' == 'true'">$(_DesiredRemovedProperties);RuntimeIdentifier</_DesiredRemovedProperties>
+
       <!-- A project can only have more than one output if the current global properties are such that the current build is a cross-targeting one. -->
       <_HasSingleTargetFramework Condition="'$(IsCrossTargetingBuild)' != 'true'">true</_HasSingleTargetFramework>
       <_HasSingleTargetFramework Condition="'$(_HasSingleTargetFramework)' == ''">false</_HasSingleTargetFramework>
+
+      <_DesiredRemovedProperties Condition="'$(_HasSingleTargetFramework)' == 'true'">$(_DesiredRemovedProperties);TargetFramework</_DesiredRemovedProperties>
 
       <_ReferringProjectShouldCallGetDesiredProperties>true</_ReferringProjectShouldCallGetDesiredProperties>
       <_ReferringProjectShouldCallGetDesiredProperties Condition="$(_HasSingleTargetFramework) and $(_IsRidAgnostic)">false</_ReferringProjectShouldCallGetDesiredProperties>
@@ -60,12 +64,12 @@ Copyright (c) .NET Foundation. All rights reserved.
   ============================================================
                               GetDesiredProperties
 
-    Invoked by common targets to return the set of properties 
-    (in the form  "key1=value1;...keyN=valueN") needed to build 
+    Invoked by common targets to return the set of properties
+    (in the form  "key1=value1;...keyN=valueN") needed to build
     against the target framework that best matches the referring
     project's target framework.
 
-    The referring project's $(TargetFrameworkMoniker) is passed 
+    The referring project's $(TargetFrameworkMoniker) is passed
     in as $(ReferringTargetFramework).
 
     This is in the common targets so that it will apply to both
@@ -88,7 +92,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_PossibleTargetFrameworks Condition="'$(TargetFramework)' == ''">$(TargetFrameworks)</_PossibleTargetFrameworks>
     </PropertyGroup>
 
-    <GetNearestTargetFramework ReferringTargetFramework="$(ReferringTargetFramework)" 
+    <GetNearestTargetFramework ReferringTargetFramework="$(ReferringTargetFramework)"
                                PossibleTargetFrameworks="$(_PossibleTargetFrameworks)"
                                ProjectFilePath="$(MSBuildProjectFullPath)"
                                Condition="'$(_SkipNearestTargetFrameworkResolution)' != 'true'">
@@ -97,9 +101,8 @@ Copyright (c) .NET Foundation. All rights reserved.
 
     <ItemGroup>
       <ProjectBuildInstructions Include="$(MSBuildProjectFullPath)">
-        <DesiredTargetFrameworkProperties>TargetFramework=$(NearestTargetFramework)</DesiredTargetFrameworkProperties>
-        <HasSingleTargetFramework>$(_HasSingleTargetFramework)</HasSingleTargetFramework>
-        <IsRidAgnostic>$(_IsRidAgnostic)</IsRidAgnostic>
+        <SetDesiredProperties>TargetFramework=$(NearestTargetFramework)</SetDesiredProperties>
+        <UndefineProperties>$(_DesiredRemovedProperties)</UndefineProperties>
       </ProjectBuildInstructions>
     </ItemGroup>
   </Target>
